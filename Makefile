@@ -13,4 +13,10 @@ shell: image
 run:
 	$(run) go run main.go $(args)
 
+check:
+	$(run) go test ./...
+
+check-args:
+	$(run) go test $(args)
+
 

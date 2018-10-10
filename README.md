@@ -12,6 +12,19 @@ For get imdb binary in folder, you can use:
 make build
 ```
 
+## Test
+
+Run all tests
+```sh
+make check
+```
+
+### Test with args
+for pass args to test
+```sh
+make check-args args="-v genrer/*.go -run TestParse"
+```
+
 ## Run
 By default will get the 500 most rating titles from each genre:
 
