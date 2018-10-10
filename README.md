@@ -4,32 +4,69 @@ Simple fetcher for get target tittles with basic infos from [IMDb]("http://www.i
 
 ## Requirements
 
-- docker
-- docker-compose
+- docker or go
+
+Use make for docker and go for go
+
+## Build
+For get imdb binary in folder, you can use:
+```sh
+make build
+```
 
 ## Run
 By default will get the 500 most rating titles from each genre:
+
 ```sh
 make run
 ```
 
+For run with options you can check with:
+
+
 ### Run with options
 Options for pass as var for the fetcher change default action.
 
-### Filter by genres (case insensitive)
-```sh
-make run genre="all"
+
+for pass args to makefile you can set flags in var args:
+```
+make run args='--limit=1000 --sort="num_votes,asc" --debug --adult=false'
 ```
 
-```sh
-make run genre="crime,documentary,game_show,mystery,sci_fi"
-```
 
-you can see availibles genres
+you too can check options with
+```sh
+imdb -h
+```
 
 ### Change limit
+for change max limit, you can use flag limit
 ```sh
-make run limit="500"
+imdb --limit=1000
+```
+
+### Remove adult results
+for prevent adult titles you can use flag adult
+```sh
+imdb --adult=false
+```
+
+### Change sort
+if you need change sort, you can use flag sort
+```sh
+imdb --sort="num_votes,asc"
+```
+
+### Change items per request
+if you need split request in parts, you can use flag count
+```sh
+imdb --count=100
+```
+
+### Debug mode
+for activate debug mode, you can use flag debug
+```sh
+imdb --debug
 ```
 
 ## Output
@@ -42,4 +79,25 @@ You could use:
 ls results/*.jsonl
 ````
 for see results
+
+### Example 
+
+```json
+{
+  "Name": "Apenas Um Show",
+  "Episode": "A Regular Epic Final Battle",
+  "Year": "(2009–2017)",
+  "Genres": [
+    "animation",
+    "action",
+    "adventure"
+  ],
+  "Rating": {
+    "Value": 9.9,
+    "Best": 10,
+    "Count": 571,
+    "Position": 1
+  }
+}
+```
 

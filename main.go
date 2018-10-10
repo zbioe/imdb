@@ -20,9 +20,9 @@ const resultPATH = "./results"
 
 var (
 	SearchURL = "https://www.imdb.com/search/title"
-	limit = flag.Int("limit", 150, "limit per genrer")
+	limit = flag.Int("limit", 500, "limit per genrer")
 	adult = flag.Bool("adult", true, "incluse adult results")
-	debug = flag.Bool("debug", true, "verbose debug mode")
+	debug = flag.Bool("debug", false, "verbose debug mode")
 	sort = flag.String("sort", "user_rating,desc", "sorted by")
 	itemsPerReq = flag.Int("count", 100, "items returned per request")
 )
@@ -85,7 +85,7 @@ func collectTitles(
 	}
 	defer f.Close()
 
-	w := json.NewEncoder(f)
+	encoder := json.NewEncoder(f)
 	for p := 1; p <= npage; p++ {
 		var rq = fmt.Sprintf("%s&page=%d", rq, p)
 		var rawurl = fmt.Sprintf("%s?%s", SearchURL, rq)
@@ -110,7 +110,7 @@ func collectTitles(
 			if debug {
 				log.Printf("%s: process %dº title of %dº page", g, sum, p)
 			}
-			if err := w.Encode(t); err != nil {
+			if err := encoder.Encode(t); err != nil {
 				log.Fatal(err)
 			}
 			if sum == limit {
