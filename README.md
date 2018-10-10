@@ -21,6 +21,9 @@ make run
 
 ### Run with options
 Options for pass as var for the fetcher change default action.
+```
+imdb -h
+```
 
 for pass args to makefile you can set flags in var args:
 ```
