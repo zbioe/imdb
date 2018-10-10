@@ -4,7 +4,7 @@ Simple fetcher for get target tittles with basic infos from [IMDb]("http://www.i
 
 ## Requirements
 
-- docker or go
+docker or go
 
 ## Build
 For get imdb binary in folder, you can use:
