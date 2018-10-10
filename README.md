@@ -60,13 +60,12 @@ imdb --debug
 ## Output
 
 Output will be in [jsonlines](http://jsonlines.org)
-and writed inside a results folder in this path
+and writed inside a results folder in current path
 
-You could use:
+for see results, you can use:
 ```sh
 ls results/*.jsonl
 ````
-for see results
 
 ### Example 
 
