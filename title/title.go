@@ -2,141 +2,168 @@ package title
 
 import (
 	"io"
-	"os"
-	"fmt"
+	"log"
 	"strings"
+	"unicode"
+	"strconv"
 
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
+	"github.com/PuerkitoBio/goquery"
 )
 
 type Title struct {
-	Genres []string
-	Text	string
+	Name	string
+	Episode	string	`json:",omitempty"`
 	Year	string
+	Genres	[]string
 	Rating	Rating
 }
 
 type Rating struct {
-	Value	float64
-	Best	float64	
-	Count	int
-	Position	int
+	Value	float64	`json:",omitempty"`
+	Best	float64	`json:",omitempty"`
+	Count	int	`json:",omitempty"`
+	Position	int	`json:",omitempty"`
 }
 
-// lexer guards state of parsing
-type lexer struct {
-	depth	int
-	emitDepth	int
-	// guards html types of tokenizer
-	z	*html.Tokenizer
-	t	html.Token
-
-	// guards shared vars used for communication
-	title	Title
-	titles	chan Title
+type Result struct {
+	Titles	<-chan Title
+	Error	error
 }
 
-func Parse(r io.Reader) <-chan Title {
-	l := &lexer{
-		z: html.NewTokenizer(r),
-		titles: make(chan Title),
-		depth: 0,
+func Parse(r io.Reader) Result {
+	doc, err := goquery.NewDocumentFromReader(r)
+	if err != nil {
+		return Result{Error:err}
 	}
-	go l.run()
-	return l.titles
+	titles := make(chan Title)
+	go runParse(doc, titles)
+	return Result{Titles:titles}
 }
 
-type lexerFunc func(*lexer) lexerFunc
+func runParse(doc *goquery.Document, titles chan<- Title) {
+	doc.Find(".mode-advanced").Each(func(i int, s *goquery.Selection) {
+		titles <- parseTitle(s)
+	})
+	close(titles)
+}
 
-func (l *lexer) run() {
-	for f := lexNextToken; f != nil; {
-		f = f(l)
+func parseTitle(s *goquery.Selection) Title {
+	var title Title
+	title.Name =  parseTitleName(s)
+	title.Episode = parseTitleEpisode(s)
+	title.Year = parseTitleYear(s)
+	title.Genres = parseTitleGenres(s)
+	title.Rating = parseTitleRating(s)
+	return title
+}
+
+
+func parseTitleName(s *goquery.Selection) string {
+	var title string
+	div := s.Find(".lister-item-header")
+	a := div.Find(`a[href#=(/title/)]`)
+	title = strings.Trim(a.First().Text(), " ")
+	return title
+}
+
+func parseTitleEpisode(s *goquery.Selection) string {
+	var episode string
+	div := s.Find(".lister-item-header")
+	a := div.Find("a[href#=(/title/)]")
+	if a.Size() > 1 {
+		episode = a.Last().Text()
 	}
-	close(l.titles)
+	return episode
 }
 
-func lexNextToken(l *lexer) lexerFunc {
-	var tt = l.z.Next()
-	l.t = l.z.Token()
-	switch tt {
-	case html.ErrorToken:
-		if err := l.z.Err(); err != io.EOF {
-			fmt.Fprintf(os.Stderr, err.Error())
-		}
-		return nil
-	case html.StartTagToken:
-		l.depth++
-		return lexTagToken
-	case html.TextToken:
-	case html.EndTagToken:
-		l.depth--
-		if l.depth == l.emitDepth {
-			l.titles <- l.title
-		}
-	default:
+func parseTitleYear(s *goquery.Selection) string {
+	var year string
+	div := s.Find(".lister-item-year")
+	year = div.First().Text()
+	return year
+}
+
+func parseTitleGenres(s *goquery.Selection) []string {
+	var genres []string
+	div := s.Find(".genre")
+	for _, g := range strings.SplitN(div.Text(), ",", -1) {
+		genrer := g
+		genrer = strings.Trim(genrer, " \n")
+		genrer = strings.ToLower(genrer)
+		genres = append(genres, genrer)
 	}
-	return lexNextToken
+	return genres
 }
 
-// target is key value control of attrs mapped in lexer
-type target struct {
-	k, v string
-	tt html.TokenType
-	atom atom.Atom
-	f lexerFunc
+func parseTitleRating(s *goquery.Selection) Rating {
+	var rating Rating
+	rating.Value = parseTitleRatingValue(s)
+	rating.Best = parseTitleRatingBest(s)
+	rating.Count = parseTitleRatingCount(s)
+	rating.Position = parseTitleRatingPosition(s)
+	return rating
 }
 
-var targets []target
-
-func lexTagToken(l *lexer) lexerFunc {
-	switch l.t.DataAtom {
-	case atom.Script, atom.Style:
-		// prevent check
-		return lexNextToken
+func parseTitleRatingValue(s *goquery.Selection) float64 {
+	var value float64
+	meta := s.Find("[itemprop=ratingValue]")
+	rawvalue, ok := meta.Attr("content")
+	if ok {
+		value = toFloat64(rawvalue)
 	}
-	return lexAttr
+	return value
 }
 
-func lexNewTitle(l *lexer) lexerFunc {
-	l.title = Title{}
-	l.emitDepth = l.depth
-	return lexNextToken
-}
-
-func lexAttr(l *lexer) lexerFunc {
-	for _, a := range l.t.Attr {
-		fmt.Printf("oi %s\n", a)
-		for _, tv := range targets {
-			if a.Key == tv.k && strings.Contains(a.Val, tv.v) {
-				fmt.Println(tv)
-				return tv.f
-			}
-		}
+func parseTitleRatingBest(s *goquery.Selection) float64 {
+	var best float64
+	meta := s.Find("[itemprop=bestRating]")
+	rawbest, ok := meta.Attr("content")
+	if ok {
+		best = toFloat64(rawbest)
 	}
-	return lexNextToken
+	return best
 }
 
-func lexTitleText(l *lexer) lexerFunc {
-	for _, a := range l.t.Attr {
-		if a.Key == "alt" {
-			l.title.Text = a.Val
-		}
+func parseTitleRatingCount(s *goquery.Selection) int {
+	var count int
+	meta := s.Find("[itemprop=ratingCount]")
+	rawcount, ok := meta.Attr("content")
+	if ok {
+		count = toInt(rawcount)
 	}
-	return lexNextToken
+	return count
 }
 
-func init() {
-	targets = []target {
-		target{
-			k: "class",
-			v: "lister-item mode-advanced",
-			f: lexNewTitle,
-		},
-		target{
-			k: "class",
-			v: "loadlate",
-			f: lexTitleText,
-		},
+func parseTitleRatingPosition(s *goquery.Selection) int {
+	var position int
+	div := s.Find(".lister-item-header")
+	raw := div.Find(".lister-item-index").Text()
+	position = toInt(strings.Replace(raw, ",", "", 1))
+	return position
+}
+
+func toInt(s string) int {
+	rawint := trimNumber(s)
+	i, err := strconv.Atoi(rawint)
+	if err != nil {
+		log.Printf("Can't converto to int: %s\n", err)
+		return 0
 	}
+	return i
+}
+
+func toFloat64(s string) float64 {
+	rawfloat := trimNumber(s)
+	f, err := strconv.ParseFloat(rawfloat, 64)
+	if err != nil {
+		log.Printf("Can't converto to float: %s\n", err)
+		return 0
+	}
+	return f
+}
+
+func trimNumber(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return !unicode.IsNumber(r)
+	})
 }

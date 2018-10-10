@@ -10,7 +10,7 @@ import (
 )
 
 type parseTest struct {
-	parse func(r io.Reader) (<-chan title.Title)
+	parse func(r io.Reader) title.Result
 	path  string
 	wantCount int
 }
@@ -28,8 +28,12 @@ var musical = parseTest{
 func TestParse(t *testing.T) {
 	for _, test := range ParserTests {
 		f := mustLoad(t, test.path)
+		result := test.parse(f)
+		if result.Error != nil {
+			t.Fatal(result.Error)
+		}
 		var count = 0
-		for title := range test.parse(f) {
+		for title := range result.Titles {
 			count++
 			if err := checkTitle(title); err != nil {
 				t.Fatal(err)
@@ -48,7 +52,7 @@ func checkTitle(t title.Title) error {
 	if len(t.Genres) == 0 {
 		return fmt.Errorf("can't find genres in title: %#v", t)
 	}
-	if t.Text == "" {
+	if t.Name == "" {
 		return fmt.Errorf("can't find text in title: %#v", t)
 	}
 	if t.Year == "" {
@@ -56,7 +60,7 @@ func checkTitle(t title.Title) error {
 	}
 	r := t.Rating
 	if r.Value == 0.0 {
-		return fmt.Errorf("can't find value in title.rating: %#v", r)
+		return fmt.Errorf("can't find value in title.rating: %#v", t)
 	}
 	if r.Best == 0.0 {
 		return fmt.Errorf("can't find best in title.rating: %#v", r)
