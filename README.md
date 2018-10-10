@@ -4,9 +4,7 @@ Simple fetcher for get target tittles with basic infos from [IMDb]("http://www.i
 
 ## Requirements
 
-- docker or go
-
-Use make for docker and go for go
+- docker
 
 ## Build
 For get imdb binary in folder, you can use:
@@ -21,22 +19,12 @@ By default will get the 500 most rating titles from each genre:
 make run
 ```
 
-For run with options you can check with:
-
-
 ### Run with options
 Options for pass as var for the fetcher change default action.
-
 
 for pass args to makefile you can set flags in var args:
 ```
 make run args='--limit=1000 --sort="num_votes,asc" --debug --adult=false'
-```
-
-
-you too can check options with
-```sh
-imdb -h
 ```
 
 ### Change limit
