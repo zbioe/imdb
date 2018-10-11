@@ -23,6 +23,8 @@ make check
 for pass args to test
 ```sh
 make check-args args="-v genrer/*.go -run TestParse"
+# or
+make check-args args="./... -bench Parse"
 ```
 
 ## Run

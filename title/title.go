@@ -63,7 +63,7 @@ func parseTitleName(s *goquery.Selection) string {
 	div := s.Find(".lister-item-header")
 	a := div.Find(`a[href#=(/title/)]`)
 	title = strings.Trim(a.First().Text(), " ")
-	return title
+	return trimLetter(title)
 }
 
 func parseTitleEpisode(s *goquery.Selection) string {
@@ -73,14 +73,14 @@ func parseTitleEpisode(s *goquery.Selection) string {
 	if a.Size() > 1 {
 		episode = a.Last().Text()
 	}
-	return episode
+	return trimLetter(episode)
 }
 
 func parseTitleYear(s *goquery.Selection) string {
 	var year string
 	div := s.Find(".lister-item-year")
 	year = div.First().Text()
-	return year
+	return trimSpace(year)
 }
 
 func parseTitleGenres(s *goquery.Selection) []string {
@@ -88,7 +88,7 @@ func parseTitleGenres(s *goquery.Selection) []string {
 	div := s.Find(".genre")
 	for _, g := range strings.SplitN(div.Text(), ",", -1) {
 		genrer := g
-		genrer = strings.Trim(genrer, " \n")
+		genrer = trimLetter(genrer)
 		genrer = strings.ToLower(genrer)
 		genres = append(genres, genrer)
 	}
@@ -166,4 +166,14 @@ func trimNumber(s string) string {
 	return strings.TrimFunc(s, func(r rune) bool {
 		return !unicode.IsNumber(r)
 	})
+}
+
+func trimLetter(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return !unicode.IsLetter(r)
+	})
+}
+
+func trimSpace(s string) string {
+	return strings.Trim(s, "\n \t")
 }

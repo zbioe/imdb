@@ -1,85 +1,70 @@
 package genrer_test
 
 import (
-	"io"
-	"os"
-	"reflect"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/iuryfukuda/imdb/genrer"
 )
 
 type parseTest struct {
-	parse func(r io.Reader) (<-chan genrer.Genrer)
-	path  string
+	raw  string
 	want  []string
 }
 
-var ParserTests = []parseTest{
-	genres,
-}
-
-var genres = parseTest{
-	parse: genrer.Parse,
-	path:  "genres.html",
-	want: []string{
-		"action", "adventure", "animation", "biography",
-		"comedy", "crime", "documentary", "drama",
-		"family", "fantasy", "film_noir", "game_show",
-		"history", "horror", "music", "musical",
-		"mystery", "news", "reality_tv", "romance",
-		"sci_fi", "sport", "talk_show", "thriller",
-		"war", "western",
+var parseTests = []parseTest{
+	parseTest{
+		raw: `  <table>
+            <tbody>
+            <tr>
+              <td><input id="genres-1" type="checkbox" name="genres" value="action"> <label for="genres-1">Action</label></td>
+              <td><input id="genres-2" type="checkbox" name="genres" value="adventure"> <label for="genres-2">Adventure</label></td>
+              <td><input id="genres-3" type="checkbox" name="genres" value="animation"> <label for="genres-3">Animation</label></td>
+              <td><input id="genres-4" type="checkbox" name="genres" value="biography"> <label for="genres-4">Biography</label></td>
+            </tr>
+            <tr>
+		`,
+		want: []string{
+			"action", "adventure", "animation", "biography",
+		},
+	},
+	parseTest{
+		raw: "",
+		want: []string{},
 	},
 }
 
-func TestParse(t *testing.T) {
-	for _, test := range ParserTests {
-		f := mustLoad(t, test.path)
-		var got []string
-		for g := range test.parse(f) {
-			got = append(got, g.String())
+func runParseTest(t parseTest) error {
+		genres := genrer.Parse(strings.NewReader(t.raw))
+
+		for i, want := range t.want {
+			got, ok := <-genres
+			if !ok || got.String() != want {
+				return fmt.Errorf("[%d]: got [%#v], want [%#v]", i, got, want)
+			}
 		}
-		f.Close()
-		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("got: %s; want: %s", got, test.want)
+
+		genre, ok := <-genres
+		if ok {
+			return fmt.Errorf("channel still open and returns: %#v", genre)
+		}
+
+		return nil
+}
+
+func TestParse(t *testing.T) {
+	for _, test := range parseTests {
+		if err := runParseTest(test); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
 
 func BenchmarkParse(b *testing.B) {
-	for _, test := range ParserTests {
-		for n := 0; n < b.N; n++ {
-			var got []string
-			f := mustLoadB(b, test.path)
-			for g := range test.parse(f) {
-				got = append(got, g.String())
-			}
-			if !reflect.DeepEqual(got, test.want) {
-				b.Errorf("got: %s; want: %s", got, test.want)
-			}
-			f.Close()
+	for _, test := range parseTests {
+		if err := runParseTest(test); err != nil {
+			b.Fatal(err)
 		}
 	}
-}
-
-func load(path string) (*os.File, error) {
-	const prefixPath = "./testdata/"
-	return os.Open(prefixPath + path)
-}
-
-func mustLoad(t *testing.T, path string) *os.File {
-	f, err := load(path)
-	if err != nil {
-		t.Fatalf("Can't load file %s: %s\n", path, err)
-	}
-	return f
-}
-
-func mustLoadB(b *testing.B, path string) *os.File {
-	f, err := load(path)
-	if err != nil {
-		b.Fatalf("Can't load file %s: %s\n", path, err)
-	}
-	return f
 }
