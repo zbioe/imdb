@@ -24,7 +24,7 @@ var (
 	adult = flag.Bool("adult", true, "incluse adult results")
 	debug = flag.Bool("debug", false, "verbose debug mode")
 	sort = flag.String("sort", "user_rating,desc", "sorted by")
-	itemsPerReq = flag.Int("count", 100, "items returned per request")
+	itemsPerReq = flag.Int("count", 50, "items returned per request")
 )
 
 func main() {
