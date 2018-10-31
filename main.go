@@ -17,6 +17,7 @@ import (
 )
 
 const resultPATH = "./results"
+const itemsPerReq = 50
 
 var (
 	SearchURL = "https://www.imdb.com/search/title"
@@ -24,7 +25,6 @@ var (
 	adult = flag.Bool("adult", true, "incluse adult results")
 	debug = flag.Bool("debug", false, "verbose debug mode")
 	sort = flag.String("sort", "user_rating,desc", "sorted by")
-	itemsPerReq = flag.Int("count", 50, "items returned per request")
 )
 
 func main() {
@@ -60,7 +60,7 @@ func main() {
 			log.Printf("start collect %s", g)
 		}
 		wg.Add(1)
-		go collectTitles(wg, g, *debug, rq, *limit, *itemsPerReq)
+		go collectTitles(wg, g, *debug, rq, *limit)
 	}
 	wg.Wait()
 }
@@ -71,10 +71,9 @@ func collectTitles(
 	g genrer.Genrer,
 	debug bool,
 	rawquery string,
-	limit, itemsPerReq int,
+	limit int,
 ) {
 	defer wg.Done()
-	var rq = fmt.Sprintf("%s&count=%d", rawquery, itemsPerReq)
 	var sum	int
 	var npage = calculatePages(limit, itemsPerReq)
 	var filepath = fmt.Sprintf("%s/%s.jsonl", resultPATH, g)
@@ -86,8 +85,8 @@ func collectTitles(
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
-	for p := 1; p <= npage; p++ {
-		var rq = fmt.Sprintf("%s&page=%d", rq, p)
+	for p := 0; p < npage; p++ {
+		var rq = fmt.Sprintf("%s&start=%d", rawquery, (p * itemsPerReq) + 1)
 		var rawurl = fmt.Sprintf("%s?%s", SearchURL, rq)
 
 		if debug {
