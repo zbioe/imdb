@@ -63,12 +63,6 @@ if you need change sort, you can use flag sort
 imdb --sort="num_votes,asc"
 ```
 
-### Change items per request
-if you need split request in parts, you can use flag count
-```sh
-imdb --count=100
-```
-
 ### Debug mode
 for activate debug mode, you can use flag debug
 ```sh
