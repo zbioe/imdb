@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iuryfukuda/imdb/genrer"
+	"github.com/zbioe/imdb/genrer"
 )
 
 type parseTest struct {

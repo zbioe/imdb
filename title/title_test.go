@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iuryfukuda/imdb/title"
+	"github.com/zbioe/imdb/title"
 )
 
 type parseTest struct {

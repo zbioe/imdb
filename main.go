@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"encoding/json"
 
-	"github.com/iuryfukuda/imdb/title"
-	"github.com/iuryfukuda/imdb/genrer"
+	"github.com/zbioe/imdb/title"
+	"github.com/zbioe/imdb/genrer"
 )
 
 const resultPATH = "./results"
