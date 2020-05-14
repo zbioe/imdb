@@ -1,19 +1,19 @@
 package main
 
 import (
-	"os"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
-	"flag"
 	"math"
-	"sync"
-	"strings"
-	"net/url"
 	"net/http"
-	"encoding/json"
+	"net/url"
+	"os"
+	"strings"
+	"sync"
 
-	"github.com/zbioe/imdb/title"
 	"github.com/zbioe/imdb/genrer"
+	"github.com/zbioe/imdb/title"
 )
 
 const resultPATH = "./results"
@@ -21,10 +21,10 @@ const itemsPerReq = 50
 
 var (
 	SearchURL = "https://www.imdb.com/search/title"
-	limit = flag.Int("limit", 500, "limit per genrer")
-	adult = flag.Bool("adult", true, "incluse adult results")
-	debug = flag.Bool("debug", false, "verbose debug mode")
-	sort = flag.String("sort", "user_rating,desc", "sorted by")
+	limit     = flag.Int("limit", 500, "limit per genrer")
+	adult     = flag.Bool("adult", true, "incluse adult results")
+	debug     = flag.Bool("debug", false, "verbose debug mode")
+	sort      = flag.String("sort", "user_rating,desc", "sorted by")
 )
 
 func main() {
@@ -65,7 +65,6 @@ func main() {
 	wg.Wait()
 }
 
-
 func collectTitles(
 	wg *sync.WaitGroup,
 	g genrer.Genrer,
@@ -74,7 +73,7 @@ func collectTitles(
 	limit int,
 ) {
 	defer wg.Done()
-	var sum	int
+	var sum int
 	var npage = calculatePages(limit, itemsPerReq)
 	var filepath = fmt.Sprintf("%s/%s.jsonl", resultPATH, g)
 
@@ -86,7 +85,7 @@ func collectTitles(
 
 	encoder := json.NewEncoder(f)
 	for p := 0; p < npage; p++ {
-		var rq = fmt.Sprintf("%s&start=%d", rawquery, (p * itemsPerReq) + 1)
+		var rq = fmt.Sprintf("%s&start=%d", rawquery, (p*itemsPerReq)+1)
 		var rawurl = fmt.Sprintf("%s?%s", SearchURL, rq)
 
 		if debug {
